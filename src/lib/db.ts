@@ -17,45 +17,34 @@ export type Item = {
   updatedAt: Date;
 };
 
-// Auto‑migration: ensure all required columns exist
+// Auto‑migration for columns (only adds missing columns, does not touch constraints)
 async function ensureSchema() {
   try {
-    // Check if 'type' column exists
     const tableInfo = await db.execute(`PRAGMA table_info(Link);`);
     const columns = tableInfo.rows.map(row => row.name as string);
     
     if (!columns.includes('type')) {
-      console.log('Migrating: adding type column...');
       await db.execute(`ALTER TABLE Link ADD COLUMN type TEXT DEFAULT 'link';`);
     }
     if (!columns.includes('fileName')) {
-      console.log('Migrating: adding fileName column...');
       await db.execute(`ALTER TABLE Link ADD COLUMN fileName TEXT;`);
     }
     if (!columns.includes('fileSize')) {
-      console.log('Migrating: adding fileSize column...');
       await db.execute(`ALTER TABLE Link ADD COLUMN fileSize INTEGER;`);
     }
     if (!columns.includes('mimeType')) {
-      console.log('Migrating: adding mimeType column...');
       await db.execute(`ALTER TABLE Link ADD COLUMN mimeType TEXT;`);
     }
-    
-    // Set default type for existing rows
     await db.execute(`UPDATE Link SET type = 'link' WHERE type IS NULL;`);
-    console.log('Schema migration completed (if needed).');
+    console.log('Schema columns verified.');
   } catch (err) {
     console.error('Migration warning:', err);
   }
 }
 
-// Call the migration once when the module loads
 ensureSchema().catch(console.error);
 
-// ------------------------------------------------------------------
-// Database functions (updated to use new columns)
-// ------------------------------------------------------------------
-
+// Get all items (admin)
 export async function getAllItems(): Promise<Item[]> {
   const result = await db.execute(
     `SELECT id, shortCode, destination, type, fileName, fileSize, mimeType, createdAt, updatedAt
@@ -74,11 +63,12 @@ export async function getAllItems(): Promise<Item[]> {
   }));
 }
 
-export async function getItemByCode(shortCode: string): Promise<Item | null> {
+// Get by shortCode AND type (for routes)
+export async function getItemByCodeAndType(shortCode: string, type: 'link' | 'file'): Promise<Item | null> {
   const result = await db.execute({
     sql: `SELECT id, shortCode, destination, type, fileName, fileSize, mimeType, createdAt, updatedAt
-          FROM Link WHERE LOWER(shortCode) = LOWER(?)`,
-    args: [shortCode],
+          FROM Link WHERE LOWER(shortCode) = LOWER(?) AND type = ?`,
+    args: [shortCode, type],
   });
   const row = result.rows[0];
   if (!row) return null;
@@ -93,6 +83,15 @@ export async function getItemByCode(shortCode: string): Promise<Item | null> {
     createdAt: new Date(row.createdAt as string),
     updatedAt: new Date(row.updatedAt as string),
   };
+}
+
+// Check existence by code and type
+export async function checkExists(shortCode: string, type: 'link' | 'file'): Promise<boolean> {
+  const result = await db.execute({
+    sql: `SELECT 1 FROM Link WHERE LOWER(shortCode) = LOWER(?) AND type = ? LIMIT 1`,
+    args: [shortCode, type],
+  });
+  return result.rows.length > 0;
 }
 
 export async function createLink(shortCode: string, destination: string): Promise<Item> {
