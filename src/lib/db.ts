@@ -13,23 +13,7 @@ export type Link = {
   updatedAt: Date;
 };
 
-// Auto-create table if not exists
-async function ensureTable() {
-  const sql = `
-    CREATE TABLE IF NOT EXISTS Link (
-      id TEXT PRIMARY KEY,
-      shortCode TEXT UNIQUE NOT NULL,
-      destination TEXT NOT NULL,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
-    )
-  `;
-  await db.execute(sql);
-}
-
-// Wrap all DB functions with table check
 export async function getAllLinks(): Promise<Link[]> {
-  await ensureTable();
   const result = await db.execute(
     `SELECT id, shortCode, destination, createdAt, updatedAt 
      FROM Link 
@@ -45,11 +29,11 @@ export async function getAllLinks(): Promise<Link[]> {
 }
 
 export async function getLinkByCode(shortCode: string): Promise<Link | null> {
-  await ensureTable();
+  // Case‑insensitive search using LOWER()
   const result = await db.execute({
     sql: `SELECT id, shortCode, destination, createdAt, updatedAt 
           FROM Link 
-          WHERE shortCode = ?`,
+          WHERE LOWER(shortCode) = LOWER(?)`,
     args: [shortCode],
   });
   const row = result.rows[0];
@@ -65,7 +49,6 @@ export async function getLinkByCode(shortCode: string): Promise<Link | null> {
 }
 
 export async function createLink(shortCode: string, destination: string): Promise<Link> {
-  await ensureTable();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   await db.execute({
@@ -83,7 +66,6 @@ export async function createLink(shortCode: string, destination: string): Promis
 }
 
 export async function updateLink(id: string, shortCode: string, destination: string): Promise<void> {
-  await ensureTable();
   const now = new Date().toISOString();
   await db.execute({
     sql: `UPDATE Link 
@@ -94,7 +76,6 @@ export async function updateLink(id: string, shortCode: string, destination: str
 }
 
 export async function deleteLink(id: string): Promise<void> {
-  await ensureTable();
   await db.execute({
     sql: `DELETE FROM Link WHERE id = ?`,
     args: [id],
