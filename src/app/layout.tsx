@@ -8,7 +8,6 @@ export const metadata: Metadata = {
     icon: [
       { url: "/links-favicon.svg", type: "image/svg+xml" },
     ],
-    // You can also add apple-touch-icon, etc.
   },
 };
 
@@ -18,7 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
+      <head>
+        <meta name="theme-color" content="#0C0E13" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+      </head>
       <body>{children}</body>
     </html>
   );
