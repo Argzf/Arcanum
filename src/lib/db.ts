@@ -8,7 +8,7 @@ export const db = createClient({
 export type Item = {
   id: string;
   shortCode: string;
-  destination: string | null;   // for links: external URL; for files: blob URL
+  destination: string | null;
   type: 'link' | 'file';
   fileName?: string | null;
   fileSize?: number | null;
@@ -17,7 +17,45 @@ export type Item = {
   updatedAt: Date;
 };
 
-// Get all items (for admin)
+// Auto‑migration: ensure all required columns exist
+async function ensureSchema() {
+  try {
+    // Check if 'type' column exists
+    const tableInfo = await db.execute(`PRAGMA table_info(Link);`);
+    const columns = tableInfo.rows.map(row => row.name as string);
+    
+    if (!columns.includes('type')) {
+      console.log('Migrating: adding type column...');
+      await db.execute(`ALTER TABLE Link ADD COLUMN type TEXT DEFAULT 'link';`);
+    }
+    if (!columns.includes('fileName')) {
+      console.log('Migrating: adding fileName column...');
+      await db.execute(`ALTER TABLE Link ADD COLUMN fileName TEXT;`);
+    }
+    if (!columns.includes('fileSize')) {
+      console.log('Migrating: adding fileSize column...');
+      await db.execute(`ALTER TABLE Link ADD COLUMN fileSize INTEGER;`);
+    }
+    if (!columns.includes('mimeType')) {
+      console.log('Migrating: adding mimeType column...');
+      await db.execute(`ALTER TABLE Link ADD COLUMN mimeType TEXT;`);
+    }
+    
+    // Set default type for existing rows
+    await db.execute(`UPDATE Link SET type = 'link' WHERE type IS NULL;`);
+    console.log('Schema migration completed (if needed).');
+  } catch (err) {
+    console.error('Migration warning:', err);
+  }
+}
+
+// Call the migration once when the module loads
+ensureSchema().catch(console.error);
+
+// ------------------------------------------------------------------
+// Database functions (updated to use new columns)
+// ------------------------------------------------------------------
+
 export async function getAllItems(): Promise<Item[]> {
   const result = await db.execute(
     `SELECT id, shortCode, destination, type, fileName, fileSize, mimeType, createdAt, updatedAt
@@ -36,7 +74,6 @@ export async function getAllItems(): Promise<Item[]> {
   }));
 }
 
-// Get by shortCode (for redirection)
 export async function getItemByCode(shortCode: string): Promise<Item | null> {
   const result = await db.execute({
     sql: `SELECT id, shortCode, destination, type, fileName, fileSize, mimeType, createdAt, updatedAt
@@ -58,7 +95,6 @@ export async function getItemByCode(shortCode: string): Promise<Item | null> {
   };
 }
 
-// Create a link (type='link')
 export async function createLink(shortCode: string, destination: string): Promise<Item> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -74,7 +110,6 @@ export async function createLink(shortCode: string, destination: string): Promis
   };
 }
 
-// Create a file record (type='file')
 export async function createFileItem(
   shortCode: string,
   blobUrl: string,
