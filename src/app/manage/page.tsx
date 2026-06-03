@@ -8,7 +8,7 @@ export default function ManagePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const redirectTo = searchParams.get('from') || '/admin';
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -18,7 +18,7 @@ export default function ManagePage() {
     const formData = new FormData(e.currentTarget);
     const result = await login(formData, redirectTo);
     if ('error' in result) {
-      setError(result.error);
+      setError(result.error || 'Invalid password'); // ✅ fallback to string
       setLoading(false);
     } else if (result.redirect) {
       router.push(result.redirect);
