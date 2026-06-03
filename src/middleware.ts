@@ -6,6 +6,9 @@ export async function middleware(request: NextRequest) {
   const session = await getSession();
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
 
+  // Log every request to help debug subdomain issues
+  console.log(`[Middleware] Host: ${request.headers.get('host')}, Path: ${request.nextUrl.pathname}`);
+
   if (isAdminRoute && !session) {
     const loginUrl = new URL('/manage', request.url);
     loginUrl.searchParams.set('from', '/admin');
@@ -16,5 +19,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/admin/:path*',
+  matcher: '/admin/:path*', // only run on admin routes, not dynamic ones
 };
