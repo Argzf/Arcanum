@@ -82,7 +82,7 @@ export default function Home() {
         {/* Hero */}
         <div className="text-center space-y-6">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="gradient-text">cdn.arsan.my</span>
+            <span className="gradient-text">share.arsan.my</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Short links and file hosting — for the exclusive use of the owner.
@@ -106,7 +106,7 @@ export default function Home() {
               Create short URLs that redirect anywhere.
             </p>
             <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-3 font-mono text-sm text-gray-800 dark:text-gray-200 break-all">
-              https://cdn.arsan.my/links/yourcode
+              https://cdn.arsan.my/links/whateveryouwant
             </div>
           </div>
 
@@ -120,7 +120,7 @@ export default function Home() {
               Upload and share files instantly.
             </p>
             <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-3 font-mono text-sm text-gray-800 dark:text-gray-200 break-all">
-              https://cdn.arsan.my/files/yourfile
+              https://cdn.arsan.my/files/whateveryouwant
             </div>
           </div>
         </div>
