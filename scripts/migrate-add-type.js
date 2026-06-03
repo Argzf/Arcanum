@@ -8,21 +8,26 @@ const db = createClient({
 
 async function migrate() {
   try {
-    // Add type column if not exists (default 'link')
+    // Add type column if not exists
     await db.execute(`ALTER TABLE Link ADD COLUMN type TEXT DEFAULT 'link';`);
     console.log('✅ Added column "type"');
     
-    // Add file specific columns
+    // Add file-specific columns
     await db.execute(`ALTER TABLE Link ADD COLUMN fileName TEXT;`);
+    console.log('✅ Added column "fileName"');
     await db.execute(`ALTER TABLE Link ADD COLUMN fileSize INTEGER;`);
+    console.log('✅ Added column "fileSize"');
     await db.execute(`ALTER TABLE Link ADD COLUMN mimeType TEXT;`);
-    console.log('✅ Added file metadata columns');
+    console.log('✅ Added column "mimeType"');
     
-    // For backward compatibility, set existing rows to type 'link'
+    // Set existing rows to type 'link'
     await db.execute(`UPDATE Link SET type = 'link' WHERE type IS NULL;`);
-    console.log('✅ Migration complete');
+    console.log('✅ Migration complete!');
   } catch (err) {
-    console.error('Migration error (columns may already exist):', err.message);
+    console.error('Migration error:', err.message);
+    if (err.message.includes('duplicate column name')) {
+      console.log('Columns already exist – no action needed.');
+    }
   }
 }
 
