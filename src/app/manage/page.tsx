@@ -1,10 +1,13 @@
+// src/app/manage/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { Suspense } from 'react'; // Import Suspense
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { login } from './actions';
 
-export default function ManagePage() {
+// This is the new inner component that will use useSearchParams
+function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const redirectTo = searchParams.get('from') || '/admin';
@@ -18,7 +21,7 @@ export default function ManagePage() {
     const formData = new FormData(e.currentTarget);
     const result = await login(formData, redirectTo);
     if ('error' in result) {
-      setError(result.error || 'Invalid password'); // ✅ fallback to string
+      setError(result.error || 'Invalid password');
       setLoading(false);
     } else if (result.redirect) {
       router.push(result.redirect);
@@ -51,5 +54,14 @@ export default function ManagePage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// The default export is now a wrapper with a Suspense boundary
+export default function ManagePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
