@@ -5,7 +5,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="max-w-3xl w-full bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
         <h1 className="text-4xl font-bold text-center mb-4 text-gray-900 dark:text-white">
-          <span className="text-blue-600">short.</span>arsan.my
+          <span className="text-blue-600">cdn.</span>arsan.my
         </h1>
         <p className="text-center text-gray-600 dark:text-gray-300 mb-8">
           Share links and files with short, memorable codes
