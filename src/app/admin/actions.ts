@@ -4,99 +4,61 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
-import { getAllLinks, createLink, updateLink, deleteLink } from '@/lib/db';
+import { getAllItems, createLink, createFileItem, updateItem, deleteItem, getItemByCode } from '@/lib/db';
+import { uploadFile } from '@/lib/blob';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 
-// ------------------------------------------------------------------
-// Semi‑automatic route reservation: scans your app directory for existing routes
-// This runs once when the server starts / during build.
-// ------------------------------------------------------------------
+// Reservation logic (same as before, but skip '/links' and '/files' as they are not short codes)
 function getReservedShortCodes(): string[] {
   try {
     const appDir = join(process.cwd(), 'src', 'app');
     const reserved: string[] = [];
-
     function walkDir(dir: string, basePath = '') {
       const entries = readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
-        const fullPath = join(dir, entry.name);
-        
         if (entry.isDirectory()) {
-          // Skip dynamic route folder and special directories
           if (entry.name === '[code]') continue;
           if (entry.name === 'api') continue;
           if (entry.name.startsWith('_')) continue;
-          if (entry.name.startsWith('.')) continue;
-          
           const routePart = entry.name;
-          
           let isRoute = false;
           try {
-            const children = readdirSync(fullPath);
-            if (children.includes('page.tsx') || children.includes('route.ts')) {
-              isRoute = true;
-            }
-          } catch {
-            // ignore
-          }
-          
+            const children = readdirSync(join(dir, entry.name));
+            if (children.includes('page.tsx') || children.includes('route.ts')) isRoute = true;
+          } catch {}
           if (isRoute) {
-            if (basePath) {
-              reserved.push(`${basePath}/${routePart}`);
-            } else {
-              reserved.push(routePart);
-            }
+            reserved.push(basePath ? `${basePath}/${routePart}` : routePart);
           }
-          
-          walkDir(fullPath, basePath ? `${basePath}/${routePart}` : routePart);
+          walkDir(join(dir, entry.name), basePath ? `${basePath}/${routePart}` : routePart);
         }
       }
     }
-    
     walkDir(appDir);
-    
-    const alwaysReserved = [
-      '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml',
-      'static', 'images', 'fonts', 'api', 'auth',
-    ];
-    
-    for (const r of alwaysReserved) {
-      if (!reserved.includes(r)) reserved.push(r);
-    }
-    
-    return [...new Set(reserved.map(r => r.toLowerCase()))];
-  } catch (err) {
-    console.error('Failed to scan routes for reservation:', err);
-    return ['admin', 'manage', 'api', '_next', 'favicon.ico', 'static', 'images', 'fonts'];
+    const alwaysReserved = ['_next', 'favicon.ico', 'robots.txt', 'static', 'api', 'auth', 'links', 'files'];
+    return [...new Set([...reserved, ...alwaysReserved].map(r => r.toLowerCase()))];
+  } catch {
+    return ['admin', 'manage', 'api', '_next', 'favicon.ico', 'static', 'links', 'files'];
   }
 }
 
-const RESERVED_SHORT_CODES = getReservedShortCodes();
+const RESERVED = getReservedShortCodes();
 
-function isShortCodeAllowed(shortCode: string): { allowed: boolean; error?: string } {
-  if (!/^[a-zA-Z0-9\-_]+$/.test(shortCode)) {
-    return { allowed: false, error: 'Short code can only contain letters, numbers, hyphens and underscores' };
-  }
-  
-  if (RESERVED_SHORT_CODES.includes(shortCode.toLowerCase())) {
-    return { allowed: false, error: `"${shortCode}" is a reserved system path and cannot be used.` };
-  }
-  
+function isShortCodeAllowed(code: string) {
+  if (!/^[a-zA-Z0-9\-_]+$/.test(code)) return { allowed: false, error: 'Invalid characters' };
+  if (RESERVED.includes(code.toLowerCase())) return { allowed: false, error: 'Reserved word' };
   return { allowed: true };
 }
 
 async function requireAuth() {
-  const session = await getSession();
-  if (!session) throw new Error('Unauthorized');
+  if (!(await getSession())) throw new Error('Unauthorized');
 }
 
-export async function getLinks() {
+export async function getItems() {
   try {
     await requireAuth();
-    return await getAllLinks();
-  } catch (error) {
-    console.error('getLinks error:', error);
+    return await getAllItems();
+  } catch {
     return [];
   }
 }
@@ -104,61 +66,67 @@ export async function getLinks() {
 export async function createNewLink(shortCode: string, destination: string) {
   try {
     await requireAuth();
-    
-    const validation = isShortCodeAllowed(shortCode);
-    if (!validation.allowed) {
-      return { error: validation.error };
-    }
-    
+    const check = isShortCodeAllowed(shortCode);
+    if (!check.allowed) return { error: check.error };
     new URL(destination);
     await createLink(shortCode, destination);
     revalidatePath('/admin');
     return { success: true };
   } catch (error: any) {
-    console.error('createLink error:', error);
-    if (error.message?.includes('UNIQUE constraint failed')) {
-      return { error: 'Short code already exists. Please choose another.' };
-    }
-    return { error: error.message || 'Failed to create link' };
+    return { error: error.message };
   }
 }
 
-export async function updateExistingLink(id: string, shortCode: string, destination: string) {
+export async function uploadNewFile(formData: FormData) {
   try {
     await requireAuth();
-    
-    const validation = isShortCodeAllowed(shortCode);
-    if (!validation.allowed) {
-      return { error: validation.error };
-    }
-    
-    new URL(destination);
-    await updateLink(id, shortCode, destination);
+    const shortCode = formData.get('shortCode') as string;
+    const file = formData.get('file') as File;
+    if (!shortCode || !file) return { error: 'Missing shortCode or file' };
+    const check = isShortCodeAllowed(shortCode);
+    if (!check.allowed) return { error: check.error };
+    // Check if code already exists
+    const existing = await getItemByCode(shortCode);
+    if (existing) return { error: 'Short code already exists' };
+    // Upload to Vercel Blob
+    const { url } = await uploadFile(file, shortCode);
+    await createFileItem(shortCode, url, file.name, file.size, file.type);
     revalidatePath('/admin');
     return { success: true };
   } catch (error: any) {
-    console.error('updateLink error:', error);
-    if (error.message?.includes('UNIQUE constraint failed')) {
-      return { error: 'Short code already in use.' };
-    }
-    return { error: error.message || 'Failed to update link' };
+    console.error(error);
+    return { error: error.message };
   }
 }
 
-export async function deleteExistingLink(id: string) {
+export async function updateExistingItem(id: string, shortCode: string, destination: string) {
   try {
     await requireAuth();
-    await deleteLink(id);
+    const check = isShortCodeAllowed(shortCode);
+    if (!check.allowed) return { error: check.error };
+    // For files, destination is the blob URL; we don't allow editing that, but we allow changing shortCode.
+    // For simplicity we treat destination as URL (for links). For files we ignore destination.
+    await updateItem(id, shortCode, destination);
     revalidatePath('/admin');
     return { success: true };
   } catch (error: any) {
-    console.error('deleteLink error:', error);
-    return { error: error.message || 'Failed to delete link' };
+    return { error: error.message };
+  }
+}
+
+export async function deleteExistingItem(id: string) {
+  try {
+    await requireAuth();
+    // Optional: delete blob from Vercel Blob if it's a file
+    await deleteItem(id);
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
   }
 }
 
 export async function logout() {
-  const cookieStore = await cookies();
-  cookieStore.delete('admin_session');
+  (await cookies()).delete('admin_session');
   redirect('/manage');
 }
