@@ -7,8 +7,8 @@ type Link = {
   id: string;
   shortCode: string;
   destination: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;   // ✅ changed from string to Date
+  updatedAt: Date;   // ✅ changed from string to Date
 };
 
 export default function AdminPage() {
