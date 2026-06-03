@@ -1,26 +1,23 @@
-import type { Metadata } from "next";
-import "./globals.css";
+'use client';
 
-export const metadata: Metadata = {
-  title: "URL Shortener",
-  description: "Simple link shortener powered by Turso",
-  icons: {
-    icon: [
-      { url: "/links-favicon.svg", type: "image/svg+xml" },
-    ],
-  },
-};
+import { usePathname } from 'next/navigation';
+import "./globals.css";
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const pathname = usePathname();
+  let favicon = "/links-favicon.svg"; // default
+  if (pathname?.startsWith('/files')) {
+    favicon = "/files-favicon.svg";
+  }
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#0C0E13" media="(prefers-color-scheme: dark)" />
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <link rel="icon" href={favicon} type="image/svg+xml" />
       </head>
       <body>{children}</body>
     </html>
