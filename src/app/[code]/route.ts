@@ -8,14 +8,13 @@ export async function GET(
   { params }: { params: Promise<{ code: string }> }
 ) {
   const { code } = await params;
-  console.log(`[ShortLink] Looking up code: "${code}"`);
+  console.log(`[ShortLink] Incoming request for code: "${code}"`);
 
-  // Case‑insensitive lookup
   const link = await getLinkByCode(code);
 
   if (!link) {
     console.log(`[ShortLink] No link found for code: ${code}`);
-    notFound(); // returns 404
+    notFound(); // returns 404 page
   }
 
   console.log(`[ShortLink] Redirecting to: ${link.destination}`);
