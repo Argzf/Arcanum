@@ -17,12 +17,11 @@ export type Item = {
   updatedAt: Date;
 };
 
-// Auto‑migration for columns (only adds missing columns, does not touch constraints)
+// Auto‑migration
 async function ensureSchema() {
   try {
     const tableInfo = await db.execute(`PRAGMA table_info(Link);`);
     const columns = tableInfo.rows.map(row => row.name as string);
-    
     if (!columns.includes('type')) {
       await db.execute(`ALTER TABLE Link ADD COLUMN type TEXT DEFAULT 'link';`);
     }
@@ -36,12 +35,11 @@ async function ensureSchema() {
       await db.execute(`ALTER TABLE Link ADD COLUMN mimeType TEXT;`);
     }
     await db.execute(`UPDATE Link SET type = 'link' WHERE type IS NULL;`);
-    console.log('Schema columns verified.');
+    console.log('Schema verified.');
   } catch (err) {
     console.error('Migration warning:', err);
   }
 }
-
 ensureSchema().catch(console.error);
 
 // Get all items (admin)
@@ -63,7 +61,29 @@ export async function getAllItems(): Promise<Item[]> {
   }));
 }
 
-// Get by shortCode AND type (for routes)
+// Get by shortCode only (for legacy redirect)
+export async function getItemByCode(shortCode: string): Promise<Item | null> {
+  const result = await db.execute({
+    sql: `SELECT id, shortCode, destination, type, fileName, fileSize, mimeType, createdAt, updatedAt
+          FROM Link WHERE LOWER(shortCode) = LOWER(?)`,
+    args: [shortCode],
+  });
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    id: row.id as string,
+    shortCode: row.shortCode as string,
+    destination: row.destination as string | null,
+    type: row.type as 'link' | 'file',
+    fileName: row.fileName as string | null,
+    fileSize: row.fileSize as number | null,
+    mimeType: row.mimeType as string | null,
+    createdAt: new Date(row.createdAt as string),
+    updatedAt: new Date(row.updatedAt as string),
+  };
+}
+
+// Get by shortCode AND type (for specific routes)
 export async function getItemByCodeAndType(shortCode: string, type: 'link' | 'file'): Promise<Item | null> {
   const result = await db.execute({
     sql: `SELECT id, shortCode, destination, type, fileName, fileSize, mimeType, createdAt, updatedAt
@@ -85,7 +105,6 @@ export async function getItemByCodeAndType(shortCode: string, type: 'link' | 'fi
   };
 }
 
-// Check existence by code and type
 export async function checkExists(shortCode: string, type: 'link' | 'file'): Promise<boolean> {
   const result = await db.execute({
     sql: `SELECT 1 FROM Link WHERE LOWER(shortCode) = LOWER(?) AND type = ? LIMIT 1`,
