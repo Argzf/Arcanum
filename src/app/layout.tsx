@@ -12,17 +12,17 @@ export default function RootLayout({
 
   // Determine page title and favicon
   let title = 'Arcanum';
-  let favicon = "/central-favicon.icon";
+  let favicon = "/central-favicon.svg";
 
   if (pathname?.startsWith('/admin')) {
     title = 'Dashboard – Arcanum';
-    favicon = "/central-favicon.icon";
+    favicon = "/central-favicon.svg";
   } else if (pathname?.startsWith('/manage')) {
     title = 'Login – Arcanum';
-    favicon = "/central-favicon.icon";
+    favicon = "/central-favicon.svg";
   } else if (pathname?.startsWith('/status')) {
     title = 'Status – Arcanum';
-    favicon = "/central-favicon.icon";
+    favicon = "/central-favicon.svg";
   } else if (pathname?.startsWith('/links')) {
     title = 'Arcanum Link Directory';
     favicon = "/links-favicon.svg";
