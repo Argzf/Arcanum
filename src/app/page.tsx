@@ -112,7 +112,7 @@ export default function Home() {
               Create short URLs that redirect anywhere.
             </p>
             <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-3 font-mono text-sm text-gray-800 dark:text-gray-200 break-all">
-              https://cdn.arsan.my/links/yourlink
+              https://short.arsan.my/links/yourlink
             </div>
           </div>
 
