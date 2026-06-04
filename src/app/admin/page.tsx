@@ -50,7 +50,11 @@ export default function AdminPage() {
     if (result.error) {
       setMessage({ type: 'error', text: result.error });
     } else {
-      setMessage({ type: 'success', text: 'Link created!' });
+      let successMsg = 'Link created!';
+      if (result.code && result.code !== formLink.shortCode) {
+        successMsg = `Link created with random code: ${result.code}`;
+      }
+      setMessage({ type: 'success', text: successMsg });
       setFormLink({ shortCode: '', destination: '' });
       loadItems();
     }
@@ -72,7 +76,11 @@ export default function AdminPage() {
     if (result.error) {
       setMessage({ type: 'error', text: result.error });
     } else {
-      setMessage({ type: 'success', text: 'File uploaded!' });
+      let successMsg = 'File uploaded!';
+      if (result.code && result.code !== formFile.shortCode) {
+        successMsg = `File uploaded with random code: ${result.code}`;
+      }
+      setMessage({ type: 'success', text: successMsg });
       setFormFile({ shortCode: '', file: null });
       loadItems();
       const fileInput = document.getElementById('fileInput') as HTMLInputElement;
@@ -135,9 +143,8 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8 animate-fade-in">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex flex-wrap justify-between items-center gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold gradient-text">Admin Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold gradient-text">Dashboard</h1>
           <button
             onClick={() => logout()}
             className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg"
@@ -146,7 +153,6 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Message Alert */}
         {message && (
           <div
             className={`rounded-xl p-4 ${
@@ -155,19 +161,12 @@ export default function AdminPage() {
                 : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
             }`}
           >
-            <p
-              className={`text-sm ${
-                message.type === 'success'
-                  ? 'text-green-700 dark:text-green-300'
-                  : 'text-red-700 dark:text-red-300'
-              }`}
-            >
+            <p className={`text-sm ${message.type === 'success' ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
               {message.text}
             </p>
           </div>
         )}
 
-        {/* Tabs */}
         <div className="flex gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-xl w-fit">
           <button
             onClick={() => setActiveTab('links')}
@@ -191,7 +190,6 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Create/Edit Form */}
         <div className="glass-card rounded-2xl p-4 md:p-6">
           {activeTab === 'links' ? (
             <>
@@ -201,16 +199,15 @@ export default function AdminPage() {
               <form onSubmit={editingId ? (e) => { e.preventDefault(); handleUpdate(editingId); } : handleCreateLink} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Short Code
+                    Short Code (optional – leave empty for random)
                   </label>
                   <input
                     type="text"
                     value={formLink.shortCode}
                     onChange={(e) => setFormLink({ ...formLink, shortCode: e.target.value })}
                     className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-grad-end transition-all"
-                    required
-                    pattern="[a-zA-Z0-9\-_]+"
-                    placeholder="e.g., myblog"
+                    pattern="[a-zA-Z0-9\-_]*"
+                    placeholder="e.g., myblog (or leave blank)"
                   />
                 </div>
                 <div>
@@ -251,16 +248,15 @@ export default function AdminPage() {
               <form onSubmit={handleUploadFile} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Short Code
+                    Short Code (optional – leave empty for random)
                   </label>
                   <input
                     type="text"
                     value={formFile.shortCode}
                     onChange={(e) => setFormFile({ ...formFile, shortCode: e.target.value })}
                     className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-grad-end transition-all"
-                    required
-                    pattern="[a-zA-Z0-9\-_]+"
-                    placeholder="e.g., myfile"
+                    pattern="[a-zA-Z0-9\-_]*"
+                    placeholder="e.g., myfile (or leave blank)"
                   />
                 </div>
                 <div>
@@ -287,7 +283,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* Items Table */}
+        {/* Items Table - same as before with copy button */}
         <div className="glass-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -336,7 +332,7 @@ export default function AdminPage() {
                             {item.fileName} ({(item.fileSize! / 1024).toFixed(1)} KB)
                           </span>
                         )}
-                       </td>
+                      </td>
                       <td className="px-4 py-4 whitespace-nowrap space-x-3">
                         {activeTab === 'links' && (
                           <button onClick={() => startEdit(item)} className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium">
@@ -346,7 +342,7 @@ export default function AdminPage() {
                         <button onClick={() => handleDelete(item.id)} className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium">
                           Delete
                         </button>
-                       </td>
+                      </td>
                     </tr>
                   ))
                 )}
