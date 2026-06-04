@@ -1,4 +1,3 @@
-// src/app/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,7 +6,7 @@ import Link from 'next/link';
 type ServiceStatus = {
   database: boolean;
   links: boolean;
- files: boolean;
+  files: boolean;
 };
 
 export default function Home() {
@@ -83,15 +82,20 @@ export default function Home() {
         {/* Hero */}
         <div className="text-center space-y-6">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="gradient-text">cdn.arsan.my</span>
+            <span className="gradient-text">Arcanum</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Short links and file hosting — for the exclusive use of the owner.
+            Private short links and file hosting — exclusive to the owner.
           </p>
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 max-w-md mx-auto">
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              ⚠️ This service is private. Only the holder of <strong><a href="https://arsan.my" target="_blank" rel="noopener noreferrer" className="hover:text-grad-end transition-colors">arsan.my</a></strong> is authorized to upload
-              files or create links.
+              ⚠️ This service is private. Only the holder of{' '}
+              <strong>
+                <a href="https://arsan.my" target="_blank" rel="noopener noreferrer" className="hover:text-grad-end transition-colors">
+                  arsan.my
+                </a>
+              </strong>{' '}
+              is authorized to upload files or create links.
             </p>
           </div>
         </div>
@@ -108,7 +112,7 @@ export default function Home() {
               Create short URLs that redirect anywhere.
             </p>
             <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-3 font-mono text-sm text-gray-800 dark:text-gray-200 break-all">
-              https://cdn.arsan.my/links/yourcode
+              https://cdn.arsan.my/links/yourlink
             </div>
           </div>
 
