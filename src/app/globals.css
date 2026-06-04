@@ -77,3 +77,19 @@
     transition-duration: 200ms;
   }
 }
+/* Responsive tables */
+@media (max-width: 640px) {
+  .glass-card {
+    @apply rounded-xl;
+  }
+  table {
+    font-size: 0.875rem;
+  }
+  th, td {
+    @apply px-3 py-3;
+  }
+  /* ensure long words break */
+  td a, td span {
+    word-break: break-word;
+  }
+}
