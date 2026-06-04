@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -11,21 +10,34 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
 
-  // Determine favicon based on route
-  let favicon = "/central-favicon.icon"; // default for public pages
-  if (pathname?.startsWith('/links')) {
+  // Determine page title and favicon
+  let title = 'Arcanum';
+  let favicon = "/central-favicon.icon";
+
+  if (pathname?.startsWith('/admin')) {
+    title = 'Dashboard – Arcanum';
+    favicon = "/central-favicon.icon";
+  } else if (pathname?.startsWith('/manage')) {
+    title = 'Login – Arcanum';
+    favicon = "/central-favicon.icon";
+  } else if (pathname?.startsWith('/status')) {
+    title = 'Status – Arcanum';
+    favicon = "/central-favicon.icon";
+  } else if (pathname?.startsWith('/links')) {
+    title = 'Arcanum Link Directory';
     favicon = "/links-favicon.svg";
   } else if (pathname?.startsWith('/files')) {
+    title = 'Arcanum File Vault';
     favicon = "/files-favicon.svg";
-  } else if (pathname?.startsWith('/admin') || pathname?.startsWith('/manage')) {
-    favicon = "/central-favicon.icon";
   }
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <title>{title}</title>
         <link rel="icon" href={favicon} type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/central-favicon.icon" />
+        <meta name="description" content="Private short links and file hosting" />
       </head>
       <body className="antialiased">{children}</body>
     </html>
