@@ -2,7 +2,7 @@
   "name": "Arcanum",
   "short_name": "Arcanum",
   "description": "Private short links and file hosting",
-  "start_url": "/manage",
+  "start_url": "/admin",
   "display": "standalone",
   "theme_color": "#0C0E13",
   "background_color": "#0C0E13",
