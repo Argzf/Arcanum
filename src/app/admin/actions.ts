@@ -1,3 +1,4 @@
+// src/app/admin/actions.ts
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -11,15 +12,45 @@ import {
   updateItem,
   deleteItem,
   checkExists,
+  getItemByCode,
 } from '@/lib/db';
 import { uploadFile } from '@/lib/blob';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 
 // ------------------------------------------------------------------
-// Route reservation (auto-detect)
+// Helper: generate random alphanumeric code (no lookalikes)
 // ------------------------------------------------------------------
-function getReservedShortCodes(): string[] {
+function generateRandomCode(length = 6): string {
+  const chars = 'abcdefghijkmnopqrstuvwxyz23456789'; // removed 0,1,l,o
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+async function getUniqueRandomCode(type: 'link' | 'file', maxAttempts = 10): Promise<string | null> {
+  const reserved = await getReservedShortCodesAsync(); // need async version
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const candidate = generateRandomCode(6);
+    // check reserved
+    if (reserved.includes(candidate)) continue;
+    // check existing in DB
+    const exists = await checkExists(candidate, type);
+    if (!exists) return candidate;
+  }
+  return null;
+}
+
+// We need to compute reserved codes asynchronously? Actually we can reuse the sync version but we must ensure it runs.
+// The sync version works at module load, but we'll convert to async for safety (reading filesystem in serverless is okay).
+// I'll keep the sync version but call it inside each action.
+
+// ------------------------------------------------------------------
+// Route reservation (synchronous – runs at module load)
+// ------------------------------------------------------------------
+function getReservedShortCodesSync(): string[] {
   try {
     const appDir = join(process.cwd(), 'src', 'app');
     const reserved: string[] = [];
@@ -51,17 +82,14 @@ function getReservedShortCodes(): string[] {
   }
 }
 
-const RESERVED = getReservedShortCodes();
+const RESERVED_CODES = getReservedShortCodesSync();
 
 function isShortCodeAllowed(code: string) {
   if (!/^[a-zA-Z0-9\-_]+$/.test(code)) return { allowed: false, error: 'Invalid characters' };
-  if (RESERVED.includes(code.toLowerCase())) return { allowed: false, error: 'Reserved word' };
+  if (RESERVED_CODES.includes(code.toLowerCase())) return { allowed: false, error: 'Reserved word' };
   return { allowed: true };
 }
 
-// ------------------------------------------------------------------
-// Auth helper
-// ------------------------------------------------------------------
 async function requireAuth() {
   const session = await getSession();
   if (!session) throw new Error('Unauthorized');
@@ -82,14 +110,26 @@ export async function getItems() {
 export async function createNewLink(shortCode: string, destination: string) {
   try {
     await requireAuth();
-    const check = isShortCodeAllowed(shortCode);
+    let finalCode = shortCode.trim();
+    if (!finalCode) {
+      // Generate random code
+      for (let i = 0; i < 10; i++) {
+        const candidate = generateRandomCode(6);
+        if (!RESERVED_CODES.includes(candidate) && !(await checkExists(candidate, 'link'))) {
+          finalCode = candidate;
+          break;
+        }
+      }
+      if (!finalCode) return { error: 'Could not generate a unique short code. Please try again.' };
+    }
+    const check = isShortCodeAllowed(finalCode);
     if (!check.allowed) return { error: check.error };
     new URL(destination);
-    const exists = await checkExists(shortCode, 'link');
+    const exists = await checkExists(finalCode, 'link');
     if (exists) return { error: 'Short code already used for a link.' };
-    await createLink(shortCode, destination);
+    await createLink(finalCode, destination);
     revalidatePath('/admin');
-    return { success: true };
+    return { success: true, code: finalCode };
   } catch (error: any) {
     return { error: error.message };
   }
@@ -101,9 +141,20 @@ export async function uploadNewFile(formData: FormData) {
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return { error: 'Blob token missing. Add BLOB_READ_WRITE_TOKEN to env.' };
     }
-    const shortCode = formData.get('shortCode') as string;
+    let shortCode = (formData.get('shortCode') as string) || '';
     const file = formData.get('file') as File;
-    if (!shortCode || !file) return { error: 'Missing shortCode or file' };
+    if (!file) return { error: 'Missing file' };
+    if (!shortCode) {
+      // Generate random code
+      for (let i = 0; i < 10; i++) {
+        const candidate = generateRandomCode(6);
+        if (!RESERVED_CODES.includes(candidate) && !(await checkExists(candidate, 'file'))) {
+          shortCode = candidate;
+          break;
+        }
+      }
+      if (!shortCode) return { error: 'Could not generate a unique short code. Please try again.' };
+    }
     const check = isShortCodeAllowed(shortCode);
     if (!check.allowed) return { error: check.error };
     const exists = await checkExists(shortCode, 'file');
@@ -111,7 +162,7 @@ export async function uploadNewFile(formData: FormData) {
     const { url } = await uploadFile(file, shortCode);
     await createFileItem(shortCode, url, file.name, file.size, file.type);
     revalidatePath('/admin');
-    return { success: true };
+    return { success: true, code: shortCode };
   } catch (error: any) {
     return { error: error.message };
   }
