@@ -90,7 +90,7 @@ export default function Home() {
           </p>
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 max-w-md mx-auto">
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              ⚠️ This service is private. Only the holder of <strong>arsan.my</strong> is authorized to upload
+              ⚠️ This service is private. Only the holder of <strong><a href="https://arsan.my" target="_blank" rel="noopener noreferrer" className="hover:text-grad-end transition-colors">arsan.my</a></strong> is authorized to upload
               files or create links.
             </p>
           </div>
