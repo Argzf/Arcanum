@@ -1,4 +1,3 @@
-// src/app/admin/actions.ts
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -12,7 +11,6 @@ import {
   updateItem,
   deleteItem,
   checkExists,
-  getItemByCode,
 } from '@/lib/db';
 import { uploadFile } from '@/lib/blob';
 import { readdirSync } from 'fs';
@@ -22,30 +20,13 @@ import { join } from 'path';
 // Helper: generate random alphanumeric code (no lookalikes)
 // ------------------------------------------------------------------
 function generateRandomCode(length = 6): string {
-  const chars = 'abcdefghijkmnopqrstuvwxyz23456789'; // removed 0,1,l,o
+  const chars = 'abcdefghijkmnopqrstuvwxyz23456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
 }
-
-async function getUniqueRandomCode(type: 'link' | 'file', maxAttempts = 10): Promise<string | null> {
-  const reserved = await getReservedShortCodesAsync(); // need async version
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const candidate = generateRandomCode(6);
-    // check reserved
-    if (reserved.includes(candidate)) continue;
-    // check existing in DB
-    const exists = await checkExists(candidate, type);
-    if (!exists) return candidate;
-  }
-  return null;
-}
-
-// We need to compute reserved codes asynchronously? Actually we can reuse the sync version but we must ensure it runs.
-// The sync version works at module load, but we'll convert to async for safety (reading filesystem in serverless is okay).
-// I'll keep the sync version but call it inside each action.
 
 // ------------------------------------------------------------------
 // Route reservation (synchronous – runs at module load)
