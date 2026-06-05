@@ -1,8 +1,8 @@
+// src/app/layout.tsx
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import "./globals.css";
 
-// Static metadata for the website (title, description, etc.)
 const defaultMetadata: Metadata = {
   title: 'Arcanum',
   description: 'Private link shortening and file hosting — secure and private',
@@ -27,7 +27,6 @@ const defaultMetadata: Metadata = {
   },
 };
 
-// This function determines if the current path is a sharing route (/links/* or /files/*)
 const isSharingRoute = (pathname: string) => {
   return pathname.startsWith('/links/') || pathname.startsWith('/files/');
 };
@@ -60,13 +59,17 @@ export default function RootLayout({
     favicon = "/files-favicon.svg";
   }
 
+  // Ensure description is string or undefined (never null)
+  const metaDescription = defaultMetadata.description ?? undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>{title}</title>
         <link rel="icon" href={favicon} type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/central-favicon-180.png" />
-        <meta name="description" content={title === 'Arcanum' ? defaultMetadata.description : undefined} />
+        {/* Use the same description for all non‑sharing pages (or only when title is not a sharing title) */}
+        <meta name="description" content={!isSharingRoute(pathname) ? metaDescription : undefined} />
 
         {!isSharingRoute(pathname) && (
           <>
@@ -77,6 +80,7 @@ export default function RootLayout({
             <meta property="og:image:width" content="1200" />
             <meta property="og:image:height" content="630" />
             <meta property="og:site_name" content="Arcanum" />
+
             <meta name="twitter:card" content={defaultMetadata.twitter?.card?.toString()} />
             <meta name="twitter:title" content={defaultMetadata.twitter?.title?.toString()} />
             <meta name="twitter:description" content={defaultMetadata.twitter?.description?.toString()} />
