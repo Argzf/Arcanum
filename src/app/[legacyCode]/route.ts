@@ -1,8 +1,8 @@
-import { getItemByCode } from '@/lib/db';
-import { redirect, notFound } from 'next/navigation';
+import { getItemByCode } from "@/lib/db";
+import { redirect, notFound } from "next/navigation";
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(
   request: Request,
@@ -14,10 +14,10 @@ export async function GET(
   const item = await getItemByCode(legacyCode);
   if (!item) {
     console.log(`[LegacyRoute] No item found, calling notFound()`);
-    notFound(); // This should trigger the custom 404 page
+    notFound(); // This triggers your custom 404 page
   }
 
-  const prefix = item.type === 'link' ? 'links' : 'files';
+  const prefix = item.type === "link" ? "links" : "files";
   console.log(`[LegacyRoute] Redirecting to /${prefix}/${legacyCode}`);
   redirect(`/${prefix}/${legacyCode}`);
 }
