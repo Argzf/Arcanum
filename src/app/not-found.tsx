@@ -1,6 +1,4 @@
-// src/app/not-found.tsx
 import Link from 'next/link';
-import type { Metadata } from 'next';
 
 export default function NotFound() {
   return (
