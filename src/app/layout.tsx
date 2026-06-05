@@ -1,14 +1,7 @@
-// src/app/layout.tsx
-'use client';
-
 import { usePathname } from 'next/navigation';
 import "./globals.css";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   let title = 'Arcanum';
@@ -31,7 +24,6 @@ export default function RootLayout({
     favicon = "/files-favicon.svg";
   }
 
-  // Static Open Graph and Twitter meta tags for all non‑sharing pages
   const shouldShowMetadata = !pathname?.startsWith('/links/') && !pathname?.startsWith('/files/');
 
   return (
@@ -41,7 +33,6 @@ export default function RootLayout({
         <link rel="icon" href={favicon} type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/central-favicon-180.png" />
         <meta name="description" content="Private link shortening and file hosting — secure and private" />
-
         {shouldShowMetadata && (
           <>
             <meta property="og:type" content="website" />
@@ -51,7 +42,6 @@ export default function RootLayout({
             <meta property="og:image:width" content="1200" />
             <meta property="og:image:height" content="630" />
             <meta property="og:site_name" content="Arcanum" />
-
             <meta name="twitter:card" content="summary_large_image" />
             <meta name="twitter:title" content="Arcanum" />
             <meta name="twitter:description" content="Private link shortening and file hosting — secure and private" />
