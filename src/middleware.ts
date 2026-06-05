@@ -1,4 +1,4 @@
-// src/middleware.ts – your existing code is fine
+// src/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
