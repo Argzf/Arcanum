@@ -9,9 +9,15 @@ export async function GET(
   { params }: { params: Promise<{ legacyCode: string }> }
 ) {
   const { legacyCode } = await params;
+  console.log(`[LegacyRoute] Looking for code: ${legacyCode}`); // log for debugging
+
   const item = await getItemByCode(legacyCode);
-  if (!item) notFound();
+  if (!item) {
+    console.log(`[LegacyRoute] No item found, calling notFound()`);
+    notFound(); // this should trigger our custom 404 page
+  }
 
   const prefix = item.type === 'link' ? 'links' : 'files';
+  console.log(`[LegacyRoute] Redirecting to /${prefix}/${legacyCode}`);
   redirect(`/${prefix}/${legacyCode}`);
 }
