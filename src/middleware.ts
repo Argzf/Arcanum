@@ -7,8 +7,6 @@ export async function middleware(request: NextRequest) {
   const session = await getSession();
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
 
-  console.log(`[Middleware] Host: ${request.headers.get('host')}, Path: ${request.nextUrl.pathname}`);
-
   if (isAdminRoute && !session) {
     const loginUrl = new URL('/manage', request.url);
     loginUrl.searchParams.set('from', '/admin');
