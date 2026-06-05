@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -41,9 +40,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/central-favicon-180.png" />
         <meta name="description" content="Private link shortening and file hosting — secure and private" />
 
-        {/* Theme colors for light and dark mode */}
+        {/* Theme colors for light and dark modes */}
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#6597E9" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0C0E13" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E293B" />
         <meta name="msapplication-TileColor" content="#6597E9" />
 
         {shouldShowMetadata && (
