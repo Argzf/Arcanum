@@ -12,7 +12,6 @@ export async function GET(
   const item = await getItemByCode(legacyCode);
   if (!item) notFound();
 
-  // Redirect to the correct prefixed path
   const prefix = item.type === 'link' ? 'links' : 'files';
   redirect(`/${prefix}/${legacyCode}`);
 }
