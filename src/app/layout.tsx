@@ -17,7 +17,7 @@ const defaultMetadata: Metadata = {
         alt: 'Arcanum Banner',
       },
     ],
-    type: 'website',
+    // 'type' is omitted here to avoid type errors; we'll hardcode it in the meta tag
   },
   twitter: {
     card: 'summary_large_image',
@@ -59,7 +59,6 @@ export default function RootLayout({
     favicon = "/files-favicon.svg";
   }
 
-  // Ensure description is string or undefined (never null)
   const metaDescription = defaultMetadata.description ?? undefined;
 
   return (
@@ -68,23 +67,23 @@ export default function RootLayout({
         <title>{title}</title>
         <link rel="icon" href={favicon} type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/central-favicon-180.png" />
-        {/* Use the same description for all non‑sharing pages (or only when title is not a sharing title) */}
         <meta name="description" content={!isSharingRoute(pathname) ? metaDescription : undefined} />
 
         {!isSharingRoute(pathname) && (
           <>
-            <meta property="og:type" content={defaultMetadata.openGraph?.type?.toString()} />
-            <meta property="og:title" content={defaultMetadata.openGraph?.title?.toString()} />
-            <meta property="og:description" content={defaultMetadata.openGraph?.description?.toString()} />
-            <meta property="og:image" content={defaultMetadata.openGraph?.images?.[0]?.url.toString()} />
+            {/* Hardcode static values to avoid type errors */}
+            <meta property="og:type" content="website" />
+            <meta property="og:title" content="Arcanum" />
+            <meta property="og:description" content="Private link shortening and file hosting — secure and private" />
+            <meta property="og:image" content="/banner.png" />
             <meta property="og:image:width" content="1200" />
             <meta property="og:image:height" content="630" />
             <meta property="og:site_name" content="Arcanum" />
 
-            <meta name="twitter:card" content={defaultMetadata.twitter?.card?.toString()} />
-            <meta name="twitter:title" content={defaultMetadata.twitter?.title?.toString()} />
-            <meta name="twitter:description" content={defaultMetadata.twitter?.description?.toString()} />
-            <meta name="twitter:image" content={defaultMetadata.twitter?.images?.[0]?.toString()} />
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content="Arcanum" />
+            <meta name="twitter:description" content="Private link shortening and file hosting — secure and private" />
+            <meta name="twitter:image" content="/banner.png" />
           </>
         )}
       </head>
