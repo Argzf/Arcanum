@@ -3,24 +3,43 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth';
 
-// This middleware runs for all routes except static assets
-export async function middleware(request: NextRequest) {
-  // Legacy JWT-based admin protection (password login)
+// Custom middleware to check legacy JWT session (password login)
+async function checkLegacySession(request: NextRequest) {
   const session = await getSession();
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
-
+  
   if (isAdminRoute && !session) {
-    const loginUrl = new URL('/manage', request.url);
-    loginUrl.searchParams.set('from', '/admin');
-    return NextResponse.redirect(loginUrl);
+    // No legacy session, let NextAuth handle it via withAuth
+    return null;
   }
-
-  // Let NextAuth handle its own routes
+  // User has legacy session, allow
   return NextResponse.next();
 }
 
-// Use NextAuth's withAuth for Discord session protection on /admin
-// This will run after our custom middleware
+// Export the combined middleware
+export default withAuth(
+  async function middleware(request: NextRequest) {
+    // First, check legacy JWT session
+    const legacyCheck = await checkLegacySession(request);
+    if (legacyCheck) return legacyCheck;
+    
+    // Otherwise, let NextAuth handle the request (it will redirect if no token)
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => {
+        // Allow if NextAuth token exists (Discord login)
+        return !!token;
+      },
+    },
+    pages: {
+      signIn: '/manage',
+    },
+  }
+);
+
+// Match all routes except static assets and API routes
 export const config = {
   matcher: [
     '/admin/:path*',
@@ -28,19 +47,3 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico|apple-touch-icon|robots.txt|links-favicon.svg|files-favicon.svg|central-favicon.svg|banner.png).*)',
   ],
 };
-
-// Apply NextAuth's withAuth to protect /admin routes (for Discord users)
-export default withAuth(
-  function middleware(req) {
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => {
-        // Allow if either NextAuth token exists (Discord login) or legacy session already passed above
-        // We rely on the custom middleware above for legacy JWT; this just prevents unauthenticated access.
-        return !!token;
-      },
-    },
-  }
-);
