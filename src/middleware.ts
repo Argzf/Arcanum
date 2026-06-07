@@ -5,10 +5,9 @@ import { getSession } from '@/lib/auth';
 
 export default withAuth(
   async function middleware(request: NextRequest) {
-    // Check legacy JWT session
+    // Check legacy JWT session (password login)
     const session = await getSession();
     if (session) {
-      // Allow access even without NextAuth token
       return NextResponse.next();
     }
     // Otherwise, let NextAuth handle authorization (based on token)
@@ -16,10 +15,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => {
-        // Allow if NextAuth token exists
-        return !!token;
-      },
+      authorized: ({ token }) => !!token,
     },
     pages: {
       signIn: '/manage',
