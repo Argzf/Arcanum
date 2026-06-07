@@ -16,17 +16,7 @@ async function verifyAdminSession(token: string) {
 }
 
 export default withAuth(
-  async function middleware(request: NextRequest) {
-    const adminSession = request.cookies.get('admin_session')?.value;
-
-    if (adminSession) {
-      const valid = await verifyAdminSession(adminSession);
-
-      if (valid) {
-        return NextResponse.next();
-      }
-    }
-
+  async function middleware(_request: NextRequest) {
     return NextResponse.next();
   },
   {
