@@ -1,4 +1,3 @@
-// Existing JWT auth utilities (unchanged)
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -26,11 +25,20 @@ export async function decrypt(token: string): Promise<any> {
 export async function getSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_session')?.value;
-  return token ? await decrypt(token) : null;
+
+  if (!token) {
+    return null;
+  }
+
+  return await decrypt(token);
 }
 
-export async function setSessionCookie(response: NextResponse, session: any) {
+export async function setSessionCookie(
+  response: NextResponse,
+  session: any
+) {
   const token = await encrypt(session);
+
   response.cookies.set('admin_session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -38,16 +46,16 @@ export async function setSessionCookie(response: NextResponse, session: any) {
     path: '/',
     maxAge: 60 * 60 * 24,
   });
+
   return response;
 }
 
-// ------------------------------------------------------------------
-// NextAuth configuration for Discord login
-// ------------------------------------------------------------------
 import { NextAuthOptions } from 'next-auth';
 import DiscordProvider from 'next-auth/providers/discord';
 
-const ALLOWED_DISCORD_USER_IDS = ['935053416877666304'];
+const ALLOWED_DISCORD_USER_IDS = [
+  '935053416877666304',
+];
 
 export const nextAuthOptions: NextAuthOptions = {
   providers: [
@@ -56,24 +64,48 @@ export const nextAuthOptions: NextAuthOptions = {
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
     }),
   ],
+
   callbacks: {
     async signIn({ user }) {
-      // Allow only the specific Discord user ID
       return ALLOWED_DISCORD_USER_IDS.includes(user.id);
     },
+
+    async jwt({ token, user }) {
+      if (user?.id) {
+        token.sub = user.id;
+      }
+
+      if (
+        token.sub &&
+        !ALLOWED_DISCORD_USER_IDS.includes(token.sub)
+      ) {
+        return {};
+      }
+
+      return token;
+    },
+
     async session({ session, token }) {
-      if (token.sub && ALLOWED_DISCORD_USER_IDS.includes(token.sub)) {
+      if (
+        token.sub &&
+        ALLOWED_DISCORD_USER_IDS.includes(token.sub)
+      ) {
         session.user.id = token.sub;
         session.user.isAdmin = true;
       }
+
       return session;
     },
   },
+
   pages: {
     signIn: '/manage',
   },
+
   secret: process.env.NEXTAUTH_SECRET,
+
   session: {
     strategy: 'jwt',
+    maxAge: 60 * 60,
   },
 };
