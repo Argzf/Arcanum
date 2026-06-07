@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { signOut as nextAuthSignOut } from 'next-auth/react';
 import {
   getItems,
   createNewLink,
@@ -131,6 +132,15 @@ export default function AdminPage() {
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
+  const handleLogout = async () => {
+    // 1. Clear legacy JWT cookie (password login)
+    await fetch('/api/auth/logout', { method: 'POST' });
+    // 2. Sign out from NextAuth (Discord login) – this will clear the session cookie
+    await nextAuthSignOut({ redirect: false });
+    // 3. Hard redirect to login page with a timestamp to prevent cache
+    window.location.href = '/manage?t=' + Date.now();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -138,15 +148,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  const handleLogout = async () => {
-    // Clear legacy JWT cookie (password login)
-    await fetch('/api/auth/logout', { method: 'POST' });
-    // Clear NextAuth session (Discord login)
-    await fetch('/api/auth/signout', { method: 'POST' });
-    // Hard redirect to login page
-    window.location.href = '/manage';
-  };
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8 animate-fade-in">
