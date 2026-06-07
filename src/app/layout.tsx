@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { SessionProvider } from 'next-auth/react';
 import "./globals.css";
 
 export default function RootLayout({
@@ -39,8 +40,6 @@ export default function RootLayout({
         <link rel="icon" href={favicon} type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/central-favicon-180.png" />
         <meta name="description" content="Private link shortening and file hosting — secure and private" />
-
-        {/* Theme colors for light and dark modes */}
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#6597E9" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E293B" />
         <meta name="msapplication-TileColor" content="#6597E9" />
@@ -62,7 +61,9 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }
