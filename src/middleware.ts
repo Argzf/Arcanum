@@ -5,12 +5,10 @@ import { getSession } from '@/lib/auth';
 
 export default withAuth(
   async function middleware(request: NextRequest) {
-    // Check legacy JWT session (password login)
     const session = await getSession();
     if (session) {
       return NextResponse.next();
     }
-    // Otherwise, let NextAuth handle authorization (based on token)
     return NextResponse.next();
   },
   {
