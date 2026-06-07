@@ -7,6 +7,14 @@ export default function DiscordLoginButton() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  const handleLogout = async () => {
+    // Clear legacy JWT cookie (password login)
+    await fetch('/api/auth/logout', { method: 'POST' });
+    // Sign out of NextAuth
+    await signOut({ redirect: false });
+    router.push('/manage');
+  };
+
   if (status === 'loading') {
     return (
       <div className="flex justify-center">
@@ -16,11 +24,6 @@ export default function DiscordLoginButton() {
   }
 
   if (session) {
-    const handleLogout = async () => {
-      await signOut({ redirect: false });
-      router.push('/manage');
-    };
-
     return (
       <div className="space-y-3">
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3">
