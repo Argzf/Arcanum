@@ -136,7 +136,7 @@ export default function Home() {
       <footer className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500 dark:text-gray-400">
         <p>
           © {new Date().getFullYear()} –{' '}
-          <a href="https://arsan.my" target="_blank" rel="noopener noreferrer" className="hover:text-grad-end transition-colors">
+          <a href="https://arcanum-arsan.vercel.app/links/portfolio" target="_blank" rel="noopener noreferrer" className="hover:text-grad-end transition-colors">
             Arsan Gzf
           </a>
         </p>
