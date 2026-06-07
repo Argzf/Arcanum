@@ -6,7 +6,7 @@ import { jwtVerify } from 'jose';
 const secretKey = process.env.JWT_SECRET!;
 const key = new TextEncoder().encode(secretKey);
 
-async function verifyAdminSession(token: string) {
+async function verifyAdminSession(token: string): Promise<boolean> {
   try {
     await jwtVerify(token, key);
     return true;
@@ -22,10 +22,12 @@ export default withAuth(
   {
     callbacks: {
       authorized: async ({ token, req }) => {
+        // Valid NextAuth session
         if (token) {
           return true;
         }
 
+        // Valid legacy admin JWT
         const adminSession =
           req.cookies.get('admin_session')?.value;
 
