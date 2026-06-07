@@ -1,3 +1,4 @@
+// File: src/lib/auth.ts
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -25,12 +26,7 @@ export async function decrypt(token: string): Promise<any> {
 export async function getSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_session')?.value;
-
-  if (!token) {
-    return null;
-  }
-
-  return await decrypt(token);
+  return token ? await decrypt(token) : null;
 }
 
 export async function setSessionCookie(
@@ -44,18 +40,19 @@ export async function setSessionCookie(
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24,
+    maxAge: 60 * 60 * 24, // 1 day
   });
 
   return response;
 }
 
+// ------------------------------------------------------------------
+// NextAuth configuration for Discord login
+// ------------------------------------------------------------------
 import { NextAuthOptions } from 'next-auth';
 import DiscordProvider from 'next-auth/providers/discord';
 
-const ALLOWED_DISCORD_USER_IDS = [
-  '935053416877666304',
-];
+const ALLOWED_DISCORD_USER_IDS = ['935053416877666304'];
 
 export const nextAuthOptions: NextAuthOptions = {
   providers: [
@@ -67,33 +64,25 @@ export const nextAuthOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user }) {
+      // Only allow the specified Discord user ID
       return ALLOWED_DISCORD_USER_IDS.includes(user.id);
     },
-
-    async jwt({ token, user }) {
-      if (user?.id) {
-        token.sub = user.id;
+    async jwt({ token, account }) {
+      // On first sign-in, store the Discord access token and refresh token in the JWT
+      if (account) {
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
       }
-
-      if (
-        token.sub &&
-        !ALLOWED_DISCORD_USER_IDS.includes(token.sub)
-      ) {
-        return {};
-      }
-
       return token;
     },
-
     async session({ session, token }) {
-      if (
-        token.sub &&
-        ALLOWED_DISCORD_USER_IDS.includes(token.sub)
-      ) {
+      // If the user is allowed, mark them as admin
+      if (token.sub && ALLOWED_DISCORD_USER_IDS.includes(token.sub)) {
         session.user.id = token.sub;
         session.user.isAdmin = true;
       }
-
+      // Expose the Discord access token on the session for potential use
+      session.user.accessToken = token.accessToken as string;
       return session;
     },
   },
@@ -106,6 +95,5 @@ export const nextAuthOptions: NextAuthOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 60 * 60,
   },
 };
