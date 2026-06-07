@@ -1,19 +1,9 @@
 'use client';
 
-import { signIn, signOut, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
 
 export default function DiscordLoginButton() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    // Clear legacy JWT cookie (password login)
-    await fetch('/api/auth/logout', { method: 'POST' });
-    // Sign out of NextAuth
-    await signOut({ redirect: false });
-    router.push('/manage');
-  };
+  const { status } = useSession();
 
   if (status === 'loading') {
     return (
@@ -23,22 +13,9 @@ export default function DiscordLoginButton() {
     );
   }
 
-  if (session) {
-    return (
-      <div className="space-y-3">
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3">
-          <p className="text-green-700 dark:text-green-300 text-sm text-center">
-            ✅ Logged in as {session.user?.name || session.user?.email}
-          </p>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-full text-sm font-medium transition-all"
-        >
-          Logout
-        </button>
-      </div>
-    );
+  // If already logged in, show nothing – the parent page will redirect to /admin
+  if (status === 'authenticated') {
+    return null;
   }
 
   return (
