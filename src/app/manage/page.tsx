@@ -1,17 +1,27 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { login } from './actions';
+import DiscordLoginButton from '../components/DiscordLoginButton';
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const redirectTo = searchParams.get('from') || '/admin';
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const { data: session, status } = useSession();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // If Discord session is active, redirect immediately
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push(redirectTo);
+    }
+  }, [session, status, router, redirectTo]);
+
+  async function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -34,6 +44,14 @@ function LoginForm() {
     }
   }
 
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 animate-fade-in">
       <div className="w-full max-w-md">
@@ -43,11 +61,29 @@ function LoginForm() {
               Admin Login
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Enter your credentials to access the dashboard
+              Sign in with Discord or password
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Discord Login Button */}
+          <div className="mb-6">
+            <DiscordLoginButton />
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                Or continue with password
+              </span>
+            </div>
+          </div>
+
+          {/* Password Login Form */}
+          <form onSubmit={handlePasswordSubmit} className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
@@ -73,17 +109,7 @@ function LoginForm() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-grad-end to-grad-mid text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Logging in...
-                </>
-              ) : (
-                'Login'
-              )}
+              {loading ? 'Logging in...' : 'Login with Password'}
             </button>
           </form>
         </div>
@@ -94,11 +120,7 @@ function LoginForm() {
 
 export default function ManagePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Loading...</div>
-      </div>
-    }>
+    <Suspense fallback={<div className="animate-pulse text-gray-500">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );
