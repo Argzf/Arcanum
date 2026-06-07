@@ -133,13 +133,22 @@ export default function AdminPage() {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   const handleLogout = async () => {
-    // 1. Clear legacy JWT cookie (password login)
-    await fetch('/api/auth/logout', { method: 'POST' });
-    // 2. Sign out from NextAuth (Discord login) – this will clear the session cookie
-    await nextAuthSignOut({ redirect: false });
-    // 3. Hard redirect to login page with a timestamp to prevent cache
-    window.location.href = '/manage?t=' + Date.now();
-  };
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    await nextAuthSignOut({
+      redirect: false,
+    });
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
+
+  window.location.replace('/manage');
+};
 
   if (loading) {
     return (
