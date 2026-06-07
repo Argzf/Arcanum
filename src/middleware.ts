@@ -1,21 +1,54 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { jwtVerify } from 'jose';
+
+const secretKey = process.env.JWT_SECRET!;
+const key = new TextEncoder().encode(secretKey);
+
+async function verifyAdminSession(token: string) {
+  try {
+    await jwtVerify(token, key);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export default withAuth(
   async function middleware(request: NextRequest) {
-    const session = await getSession();
-    if (session) {
-      return NextResponse.next();
+    const adminSession = request.cookies.get('admin_session')?.value;
+
+    if (adminSession) {
+      const valid = await verifyAdminSession(adminSession);
+
+      if (valid) {
+        return NextResponse.next();
+      }
     }
+
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: async ({ token, req }) => {
+        if (token) {
+          return true;
+        }
+
+        const adminSession =
+          req.cookies.get('admin_session')?.value;
+
+        if (!adminSession) {
+          return false;
+        }
+
+        return await verifyAdminSession(adminSession);
+      },
     },
-    pages: { signIn: '/manage' },
+    pages: {
+      signIn: '/manage',
+    },
   }
 );
 
