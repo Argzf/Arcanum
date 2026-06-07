@@ -1,3 +1,4 @@
+// Existing JWT auth utilities (unchanged)
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -35,7 +36,44 @@ export async function setSessionCookie(response: NextResponse, session: any) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24, // 1 day
+    maxAge: 60 * 60 * 24,
   });
   return response;
 }
+
+// ------------------------------------------------------------------
+// NextAuth configuration for Discord login
+// ------------------------------------------------------------------
+import { NextAuthOptions } from 'next-auth';
+import DiscordProvider from 'next-auth/providers/discord';
+
+const ALLOWED_DISCORD_USER_IDS = ['935053416877666304'];
+
+export const nextAuthOptions: NextAuthOptions = {
+  providers: [
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+    }),
+  ],
+  callbacks: {
+    async signIn({ user }) {
+      // Allow only the specific Discord user ID
+      return ALLOWED_DISCORD_USER_IDS.includes(user.id);
+    },
+    async session({ session, token }) {
+      if (token.sub && ALLOWED_DISCORD_USER_IDS.includes(token.sub)) {
+        session.user.id = token.sub;
+        session.user.isAdmin = true;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: '/manage',
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+  },
+};
