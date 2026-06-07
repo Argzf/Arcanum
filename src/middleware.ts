@@ -17,13 +17,10 @@ export default withAuth(
     callbacks: {
       authorized: ({ token }) => !!token,
     },
-    pages: {
-      signIn: '/manage',
-    },
+    pages: { signIn: '/manage' },
   }
 );
 
-// Apply this middleware only to /admin routes
 export const config = {
   matcher: ['/admin/:path*'],
 };
