@@ -1,4 +1,3 @@
-// src/app/manage/page.tsx
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -15,7 +14,6 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const { data: session, status } = useSession();
 
-  // Redirect if Discord session is active
   useEffect(() => {
     if (status === 'authenticated' && session) {
       router.push(redirectTo);
@@ -66,12 +64,10 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Discord Login Button */}
           <div className="mb-6">
             <DiscordLoginButton />
           </div>
 
-          {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
@@ -83,7 +79,6 @@ function LoginForm() {
             </div>
           </div>
 
-          {/* Password Login Form */}
           <form onSubmit={handlePasswordSubmit} className="space-y-5">
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
